@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>予算編成シミュレーター｜浦和ロータリークラブ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --royal:#17458f;--azure:#0b3a78;--ink:#0a2540;--gold:#c8932b;--gold-soft:#f3e6c8;
+    --paper:#fbfaf7;--panel:#fff;--rule:#dde3ec;--rule-soft:#eef1f6;--muted:#64748b;
+    --calc-tint:#f2f6fc;--pos:#1f7a54;--neg:#b23b3b;--amber:#b9802b;--amber-bg:#fdf4e3;
+    --shadow:0 1px 2px rgba(10,37,64,.06),0 8px 28px rgba(10,37,64,.06);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Noto Sans JP",system-ui,sans-serif;font-feature-settings:"palt";line-height:1.55}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 22px 80px}
+
+  /* Masthead */
+  header.mast{background:linear-gradient(180deg,var(--royal),var(--azure));color:#fff;border-bottom:3px solid var(--gold)}
+  .mast-inner{max-width:1240px;margin:0 auto;padding:22px 22px 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand h1{font-family:"Noto Serif JP",serif;font-weight:600;font-size:1.06rem;margin:0;letter-spacing:.04em}
+  .brand .sub{font-size:.72rem;opacity:.82;letter-spacing:.16em;margin-top:3px}
+  .mast-meta{text-align:right;font-size:.74rem;opacity:.9;letter-spacing:.06em}
+  .mast-meta strong{font-family:"Noto Serif JP",serif;font-weight:600;font-size:1.5rem;display:block;letter-spacing:.04em;opacity:1}
+
+  .panel{background:var(--panel);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow)}
+  h2.sec{font-family:"Noto Serif JP",serif;font-weight:600;font-size:.82rem;letter-spacing:.16em;color:var(--royal);
+    margin:0 0 14px;display:flex;align-items:center;gap:9px}
+  h2.sec::before{content:"";width:18px;height:2px;background:var(--gold);display:inline-block}
+
+  /* Rate + drivers */
+  .drivers{margin-top:22px;padding:18px 20px}
+  .ratewrap{display:flex;gap:24px;flex-wrap:wrap;align-items:stretch;margin-bottom:18px;
+    padding-bottom:18px;border-bottom:1px dashed var(--rule)}
+  .rate-main{display:flex;flex-direction:column;gap:6px;min-width:210px}
+  .rate-main label{font-size:.68rem;color:var(--muted);letter-spacing:.04em;font-weight:500}
+  .rate-input-row{display:flex;align-items:baseline;gap:8px}
+  .rate-input-row input{font:inherit;font-weight:700;font-size:1.5rem;color:var(--royal);width:120px;
+    border:none;border-bottom:1.5px solid var(--rule);background:transparent;padding:2px 2px;
+    text-align:right;font-variant-numeric:tabular-nums;font-family:"Noto Serif JP",serif}
+  .rate-input-row input:focus{outline:none;border-color:var(--gold)}
+  .rate-input-row .u{font-size:.74rem;color:var(--muted)}
+  .rate-refs{flex:1;min-width:280px;display:flex;flex-direction:column;gap:7px;
+    background:var(--calc-tint);border:1px solid var(--rule);border-radius:10px;padding:11px 14px}
+  .ref-row{display:flex;align-items:center;gap:10px;font-size:.74rem}
+  .ref-row .rl{color:var(--muted);min-width:74px}
+  .ref-row b{font-family:"Noto Serif JP",serif;font-size:.98rem;color:var(--ink);font-variant-numeric:tabular-nums}
+  .ref-row .rdate{font-size:.64rem;color:var(--muted)}
+  .ref-row .apply{font:inherit;font-size:.64rem;font-weight:700;cursor:pointer;border:1px solid var(--royal);
+    color:var(--royal);background:#fff;border-radius:6px;padding:3px 9px;margin-left:auto;transition:.15s}
+  .ref-row .apply:hover{background:var(--royal);color:#fff}
+  .ref-row .src{font-size:.64rem;color:var(--royal);text-decoration:none;border-bottom:1px dotted var(--royal)}
+  .ref-row .src:hover{color:var(--azure)}
+  .ref-note{font-size:.62rem;color:var(--muted);line-height:1.5;margin-top:1px}
+
+  .drow{display:flex;flex-wrap:wrap;gap:20px 28px;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld label{font-size:.68rem;color:var(--muted);letter-spacing:.04em;font-weight:500}
+  .fld input{font:inherit;font-weight:700;color:var(--royal);width:118px;border:none;border-bottom:1.5px solid var(--rule);
+    background:transparent;padding:4px 2px;text-align:right;font-variant-numeric:tabular-nums;transition:border-color .15s}
+  .fld.small input{width:72px}
+  .fld input:focus{outline:none;border-color:var(--gold)}
+  .fld .unit{font-size:.62rem;color:var(--muted);font-weight:400}
+  .endmembers{margin-left:auto;display:flex;gap:18px;align-items:center;background:var(--calc-tint);
+    border:1px solid var(--rule);border-radius:10px;padding:9px 16px}
+  .endmembers .em-lab{font-size:.62rem;color:var(--muted);letter-spacing:.1em}
+  .endmembers .em-val{font-family:"Noto Serif JP",serif;font-weight:600;font-size:1.3rem;color:var(--ink);font-variant-numeric:tabular-nums}
+  .endmembers .em-val span{font-size:.6rem;color:var(--muted);font-weight:400;margin-left:3px}
+
+  /* Detail params (now on top) */
+  details.params{margin-top:18px;overflow:hidden}
+  details.params>summary{list-style:none;cursor:pointer;padding:16px 20px;font-family:"Noto Serif JP",serif;
+    font-weight:600;font-size:.82rem;letter-spacing:.12em;color:var(--royal);display:flex;align-items:center;justify-content:space-between}
+  details.params>summary::-webkit-details-marker{display:none}
+  details.params>summary .chev{transition:transform .2s;color:var(--gold);font-weight:700;font-size:1.1rem}
+  details.params[open]>summary .chev{transform:rotate(90deg)}
+  .params-legend{font-size:.64rem;color:var(--muted);font-weight:400;letter-spacing:.02em;font-family:"Noto Sans JP"}
+  .pgrid{padding:2px 20px 22px}
+  .pgrp{font-size:.66rem;font-weight:700;letter-spacing:.1em;color:var(--royal);
+    border-bottom:1px solid var(--rule);padding-bottom:5px;margin:18px 0 12px;display:flex;justify-content:space-between;align-items:baseline}
+  .pgrp:first-child{margin-top:4px}
+  .pgrp .ghint{font-size:.6rem;font-weight:400;color:var(--muted);letter-spacing:0}
+  .prow{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:13px 22px}
+  .pfld{display:flex;flex-direction:column;gap:4px}
+  .pfld label{font-size:.66rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .srcl{font-size:.58rem;color:var(--royal);text-decoration:none;border-bottom:1px dotted var(--royal);white-space:nowrap}
+  .srcl:hover{color:var(--azure)}
+  .pin{display:flex;align-items:stretch;gap:6px}
+  .pin input{flex:1;min-width:0;font:inherit;font-size:.82rem;font-weight:600;color:var(--azure);text-align:right;
+    border:1px solid var(--rule);border-radius:7px;padding:5px 9px;font-variant-numeric:tabular-nums;background:#fffdf6}
+  .pin input:focus{outline:none;border-color:var(--gold);background:#fff}
+  .cur2{display:flex;border:1px solid var(--rule);border-radius:7px;overflow:hidden;flex:0 0 auto}
+  .cur2 button{font:inherit;font-size:.74rem;font-weight:700;cursor:pointer;border:none;background:#fff;color:var(--muted);
+    width:30px;padding:0;transition:.12s}
+  .cur2 button.on{background:var(--royal);color:#fff}
+  .cur2 button:hover:not(.on){background:var(--rule-soft)}
+  .cunit{flex:0 0 auto;display:flex;align-items:center;font-size:.66rem;color:var(--muted);padding:0 8px;
+    border:1px solid var(--rule-soft);border-radius:7px;background:#fafbfd}
+
+  /* Layout grid */
+  .grid{display:grid;grid-template-columns:1fr 304px;gap:22px;margin-top:22px;align-items:start}
+
+  /* Statement */
+  .statement{overflow:hidden}
+  .stmt-pad{padding:20px 22px 8px}
+  .section-title{font-family:"Noto Serif JP",serif;font-weight:600;font-size:.92rem;color:var(--ink);
+    margin:24px 0 4px;padding-bottom:7px;border-bottom:2px solid var(--ink);display:flex;align-items:baseline;gap:10px}
+  .section-title:first-of-type{margin-top:6px}
+  .section-title .en{font-size:.62rem;letter-spacing:.18em;color:var(--gold);font-weight:700}
+  .subhead{font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--royal);margin:16px 0 2px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  thead th{font-size:.6rem;font-weight:500;color:var(--muted);letter-spacing:.06em;text-align:right;padding:6px 8px;border-bottom:1px solid var(--rule)}
+  thead th.l{text-align:left}
+  tbody td{padding:5px 8px;font-size:.8rem;border-bottom:1px solid var(--rule-soft);white-space:nowrap}
+  tbody td.name{text-align:left;white-space:normal;color:var(--ink)}
+  tbody td.sub{padding-left:20px;color:var(--muted);font-size:.76rem}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .cur{color:var(--ink)}.prev{color:#94a3b8;font-size:.74rem}
+  .diff{font-size:.72rem}.diff.pos{color:var(--pos)}.diff.neg{color:var(--neg)}
+  .ccell{background:var(--calc-tint)}
+  td.editwrap{padding:2px 4px}
+  input.edit{font:inherit;font-size:.8rem;font-weight:500;color:var(--azure);width:100%;min-width:96px;text-align:right;
+    border:1px solid transparent;border-radius:6px;background:#fffdf6;padding:4px 8px;font-variant-numeric:tabular-nums;transition:.15s}
+  input.edit:hover{border-color:var(--rule)}
+  input.edit:focus{outline:none;border-color:var(--gold);background:#fff}
+  tr.subtotal td{font-weight:700;color:var(--ink);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);background:#fafbfd}
+  tr.subtotal td.name{color:var(--royal)}
+  tr.grandtotal td{font-weight:700;font-size:.86rem;color:#fff;background:var(--ink);border:none}
+  tr.grandtotal td.name{letter-spacing:.06em}
+  tr.balance td{font-weight:700;background:var(--gold-soft);border-top:2px solid var(--gold);border-bottom:2px solid var(--gold)}
+  tr.balance td.name{color:#8a6516}
+  .note{font-size:.68rem;color:var(--muted);padding:8px 8px 2px;line-height:1.6}
+
+  /* Summary */
+  .summary{position:sticky;top:18px;display:flex;flex-direction:column;gap:14px}
+  .card{overflow:hidden}
+  .card .ch{font-family:"Noto Serif JP",serif;font-weight:600;font-size:.78rem;letter-spacing:.12em;color:#fff;
+    background:linear-gradient(180deg,var(--royal),var(--azure));padding:12px 16px}
+  .card .cb{padding:14px 16px}
+  .sline{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--rule-soft)}
+  .sline:last-child{border-bottom:none}
+  .sline .sl{font-size:.74rem;color:var(--muted)}
+  .sline .sv{font-family:"Noto Serif JP",serif;font-weight:600;font-size:1.02rem;font-variant-numeric:tabular-nums}
+  .sv.income{color:var(--royal)}.sv.expense{color:var(--ink)}
+  .gauge{padding:16px}
+  .gauge .glab{font-size:.66rem;letter-spacing:.12em;color:var(--muted);text-align:center}
+  .gauge .gval{font-family:"Noto Serif JP",serif;font-weight:700;font-size:1.7rem;text-align:center;margin:5px 0 2px;font-variant-numeric:tabular-nums}
+  .gauge .gstate{text-align:center;font-size:.68rem;font-weight:700;letter-spacing:.1em}
+  .gauge.bal{background:var(--gold-soft)}.gauge.bal .gval{color:#8a6516}.gauge.bal .gstate{color:#8a6516}
+  .gauge.sur .gval{color:var(--pos)}.gauge.sur .gstate{color:var(--pos)}
+  .gauge.def .gval{color:var(--neg)}.gauge.def .gstate{color:var(--neg)}
+  .bar{height:6px;border-radius:6px;background:var(--rule-soft);margin-top:12px;overflow:hidden;display:flex}
+  .bar i{display:block;height:100%}.bar .bi{background:var(--royal)}.bar .be{background:var(--gold)}
+  .actions{display:flex;gap:8px;padding:0 16px 16px}
+  .btn{flex:1;font:inherit;font-size:.72rem;font-weight:700;letter-spacing:.04em;cursor:pointer;border-radius:9px;
+    padding:9px;border:1px solid var(--rule);background:#fff;color:var(--royal);transition:.15s}
+  .btn:hover{border-color:var(--royal);background:#f4f8fe}
+  .btn.print{background:var(--royal);color:#fff;border-color:var(--royal)}.btn.print:hover{background:var(--azure)}
+  .legend{font-size:.66rem;color:var(--muted);padding:2px 2px 0;line-height:1.7}
+  .legend b{color:var(--royal)}
+
+  /* 検算 card */
+  .check .cb{padding:12px 16px 14px}
+  .check-row{display:flex;justify-content:space-between;align-items:center;font-size:.74rem;padding:5px 0;border-bottom:1px solid var(--rule-soft)}
+  .check-row:last-child{border-bottom:none}
+  .check-row .cn{color:var(--ink)}
+  .check-row .cv{font-weight:700;font-variant-numeric:tabular-nums}
+  .check-row .cv.ok{color:var(--pos)}.check-row .cv.warn{color:var(--amber)}
+  .check-base{font-size:.66rem;color:var(--muted);margin:2px 0 8px}
+  .check-base b{color:var(--royal);font-size:.84rem;font-family:"Noto Serif JP",serif}
+  .alert{background:var(--amber-bg);border:1px solid #ecd3a6;border-radius:10px;padding:10px 12px;margin-top:10px;
+    font-size:.7rem;color:#7a5410;line-height:1.55;position:relative}
+  .alert b{color:var(--amber)}
+  .alert .x{position:absolute;top:7px;right:9px;cursor:pointer;color:#b08a4a;font-weight:700;font-size:.9rem;border:none;background:none}
+  .ok-msg{background:#eef7f1;border:1px solid #cfe8d9;border-radius:10px;padding:9px 12px;margin-top:10px;
+    font-size:.72rem;color:var(--pos);font-weight:600}
+
+  footer{text-align:center;font-size:.66rem;color:var(--muted);margin-top:30px;letter-spacing:.04em;line-height:1.7}
+
+  @media (max-width:960px){
+    .grid{grid-template-columns:1fr}.summary{position:static}
+    .endmembers{margin-left:0;width:100%;justify-content:space-around}
+  }
+  @media print{
+    .drivers,details.params,.summary .actions,.legend,footer{display:none}
+    .grid{grid-template-columns:1fr}body{background:#fff}
+    header.mast{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    input.edit{border:none;background:transparent}
+  }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="mast-inner">
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 100 100" aria-hidden="true">
+        <g fill="none" stroke="#f3e6c8" stroke-width="6"><circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="9" fill="#f3e6c8" stroke="none"/></g>
+        <g fill="#f3e6c8"><g transform="translate(50,50)">
+          <rect x="-3.5" y="-43" width="7" height="11" rx="2"/><rect x="-3.5" y="-43" width="7" height="11" rx="2" transform="rotate(45)"/>
+          <rect x="-3.5" y="-43" width="7" height="11" rx="2" transform="rotate(90)"/><rect x="-3.5" y="-43" width="7" height="11" rx="2" transform="rotate(135)"/>
+          <rect x="-3.5" y="-43" width="7" height="11" rx="2" transform="rotate(180)"/><rect x="-3.5" y="-43" width="7" height="11" rx="2" transform="rotate(225)"/>
+          <rect x="-3.5" y="-43" width="7" height="11" rx="2" transform="rotate(270)"/><rect x="-3.5" y="-43" width="7" height="11" rx="2" transform="rotate(315)"/>
+        </g></g>
+      </svg>
+      <div><h1>浦和ロータリークラブ</h1><div class="sub">予算編成シミュレーター ・ 一般会計</div></div>
+    </div>
+    <div class="mast-meta">予算書（案）<strong>2025–2026</strong>自 2025.7/1　至 2026.6/30</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- DRIVERS + RATE -->
+  <section class="panel drivers">
+    <h2 class="sec">予算ドライバー ・ ロータリーレート</h2>
+    <div class="ratewrap">
+      <div class="rate-main">
+        <label>適用中のレート <span class="unit">(円 / 1ドル)</span></label>
+        <div class="rate-input-row"><input id="rate" type="number" step="1" value="157"><span class="u">円/$</span></div>
+      </div>
+      <div class="rate-refs">
+        <div class="ref-row">
+          <span class="rl">公式レート</span>
+          <b id="offRate">159 円</b><span class="rdate" id="offDate">2026年6月</span>
+          <button class="apply" onclick="applyRate(OFFICIAL.rate)">適用</button>
+        </div>
+        <div class="ref-row">
+          <span class="rl">市場参考</span>
+          <b id="mktRate">取得中…</b><span class="rdate" id="mktDate"></span>
+          <button class="apply" id="mktApply" onclick="applyMkt()" style="visibility:hidden">適用</button>
+        </div>
+        <div class="ref-row" style="gap:14px">
+          <span class="rl">根拠</span>
+          <a class="src" href="https://my.rotary.org/ja/exchange-rates" target="_blank" rel="noopener">My Rotary 為替レート↗</a>
+          <a class="src" href="https://ri2770.com/" target="_blank" rel="noopener">第2770地区↗</a>
+        </div>
+        <div class="ref-note">公式ロータリーレートはRIが毎月設定します。市場参考は当日のUSD/JPY実勢（自動取得）で、公式値とは異なります。月初にリンクで最新の公式レートをご確認ください。</div>
+      </div>
+    </div>
+    <div class="drow">
+      <div class="fld"><label>ニコニコ活動資金 <span class="unit">(前年度より)</span></label><input id="nikoniko" type="number" step="10000" value="3000000"></div>
+      <div class="fld small"><label>初期 通常会員</label><input id="mRegInit" type="number" value="104"></div>
+      <div class="fld small"><label>初期 親子会員</label><input id="mParInit" type="number" value="0"></div>
+      <div class="fld small"><label>新規 通常</label><input id="mRegNew" type="number" value="1"></div>
+      <div class="fld small"><label>新規 親子</label><input id="mParNew" type="number" value="0"></div>
+      <div class="fld small"><label>退会 通常</label><input id="mRegWithdraw" type="number" value="0"></div>
+      <div class="fld small"><label>退会 親子</label><input id="mParWithdraw" type="number" value="0"></div>
+      <div class="fld small"><label>交代会員</label><input id="mReplace" type="number" value="5"></div>
+      <div class="endmembers">
+        <div><div class="em-lab">年度末 通常</div><div class="em-val" id="endReg">105<span>名</span></div></div>
+        <div><div class="em-lab">年度末 親子</div><div class="em-val" id="endPar">0<span>名</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DETAIL PARAMS (moved to top) -->
+  <details class="panel params" open>
+    <summary><span>単価・通貨・数量の詳細設定 <span class="params-legend">　単価 × 通貨(¥/$) × 数量 で算出</span></span><span class="chev">›</span></summary>
+    <div class="pgrid" id="paramGrid"></div>
+  </details>
+
+  <!-- MAIN GRID -->
+  <div class="grid">
+    <section class="panel statement">
+      <div class="stmt-pad">
+        <h2 class="sec">予算書（一般会計）</h2>
+        <div id="ledger"></div>
+        <div class="note">＜計算項目＞は会員数・レート・単価から自動算出（$表示の単価はロータリーレートで円換算）。＜入力＞欄は予算編成で直接調整します。</div>
+      </div>
+    </section>
+
+    <aside class="summary">
+      <div class="panel card">
+        <div class="ch">通常収支サマリー</div>
+        <div class="cb">
+          <div class="sline"><span class="sl">収入の部 合計</span><span class="sv income" id="sIncome">¥0</span></div>
+          <div class="sline"><span class="sl">支出の部 合計</span><span class="sv expense" id="sExpense">¥0</span></div>
+        </div>
+        <div class="gauge" id="gauge">
+          <div class="glab">通常収支差額</div><div class="gval" id="gVal">¥0</div><div class="gstate" id="gState">均衡</div>
+          <div class="bar"><i class="bi" id="barI" style="width:50%"></i><i class="be" id="barE" style="width:50%"></i></div>
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="resetAll()">初期値に戻す</button>
+          <button class="btn print" onclick="window.print()">印刷</button>
+        </div>
+      </div>
+
+      <!-- 検算 -->
+      <div class="panel card check">
+        <div class="ch">整合性チェック（検算）</div>
+        <div class="cb" id="checkBody"></div>
+      </div>
+
+      <div class="panel card">
+        <div class="ch">一般会計 繰越</div>
+        <div class="cb">
+          <div class="sline"><span class="sl">前年度繰越金</span><span class="sv" id="sCarry" style="color:var(--muted)">¥0</span></div>
+          <div class="sline"><span class="sl">寄付金等収支差額</span><span class="sv" id="sDonBal" style="color:var(--muted)">¥0</span></div>
+          <div class="sline"><span class="sl">次年度繰越金（見込）</span><span class="sv" id="sNext" style="color:var(--royal)">¥0</span></div>
+        </div>
+      </div>
+
+      <div class="legend"><b>■</b> 計算項目（自動）　/　<span style="color:#9a7117">■</span> 入力項目（調整）<br>負数は <span style="color:var(--neg)">△</span> で表示します。</div>
+    </aside>
+  </div>
+
+  <footer>予算編成フォームのマスター計算ロジックを再現。単価×通貨×数量で各項目を算出し、レート・会員数の変更が収支に即時反映されます。</footer>
+</div>
+
+<script>
+/* 公式ロータリーレート（RIが毎月設定。最新値は2026年6月時点） */
+const OFFICIAL={rate:159, label:'2026年6月'};
+
+/* 入力初期値 */
+const def={
+  rate:157, nikoniko:3000000,
+  mRegInit:104, mParInit:0, mRegNew:1, mParNew:0, mRegWithdraw:0, mParWithdraw:0, mReplace:5,
+  nyukaiReg:150000, nyukaiRep:50000, nenkaiHalf:210000,
+  visRegQty:10, visRegPrice:4000, visSesQty:5, visSesPrice:2000,
+  riPrice:41, riProp:90000, kiteiPrice:1, rotarianQty:24, rotarianPrice:2,
+  yoneyamaFutsu:2500, chikuButan:12000, group1Unei:2000, group1Butan:320000, tomoPrice:275,
+  zaidanSesQty:80, zaidanSesPrice:1000, zaidanSesTimes:4,
+  chikuTaikai:11000, imPrice:12000, chikuHojoUsd:1300, yoneyamaHojo:0,
+  zaidanPrice:250, yoneyamaSpecial:25000, yoneyamaScholar:140000, scholarMonths:3,
+  kaijoQty:32, kaijoPrice:38500, onkyoQty:32, onkyoPrice:16500, hokanQty:32, hokanPrice:5500,
+  shoku1Price:3500, shoku1Qty:72, shoku1Times:17, shoku2Price:2600, shoku2Qty:72, shoku2Times:11,
+  shoku3Price:2000, shoku3Qty:72, shoku3Times:4, shokuYobi:100000,
+  pianoQty:34, pianoPrice:5000, pianoExtra:60000,
+  risoku:1000, zatsu:4500000, carryPrev:0,
+  jimusyoChinshaku:2765700, jimusyoKanri:700000, jinkenhi:2400000, kaikeiItaku:374000,
+  hokenhi:40000, shomohin:550000, kigu:200000, toshohin:700000, tsushin:400000,
+  kaigihi:1500000, keicho:800000, kosai:250000, zasshi:40000, zappi:400000,
+  kanriUnei:20000, shusseki:20000, shokugyoBunrui:10000, kaiinZokyo:100000, kaiinSenko:10000,
+  shinboku:11000000, joho:100000, program:800000, kaiho:1200000, koukyo:100000, hoken:100000,
+  saa:150000, shokugyoHoshi:50000, shakaiHoshi:800000, chiikiKassei:550000, kankyo:250000,
+  kokusaiHoshi:700000, yoneyamaKinen:100000, seishonen:20000, seishonenKokan:10000, interact:350000, rotaract:100000,
+  zaidanKei:50000, chokiKeikaku:170000, kikinKurire:1200000, miraiHoshi:500000, zaimuKento:50000,
+  saigai:200000, yobihi:169816
+};
+/* 通貨フラグ（原則JPY。RI・財団関連はUSD） */
+const usdKeys=['riPrice','kiteiPrice','rotarianPrice','chikuHojoUsd','zaidanPrice'];
+function buildCur(){
+  const moneyKeys=['nyukaiReg','nyukaiRep','nenkaiHalf','visRegPrice','visSesPrice','riPrice','riProp',
+    'kiteiPrice','rotarianPrice','yoneyamaFutsu','chikuButan','group1Unei','group1Butan','tomoPrice',
+    'zaidanSesPrice','chikuTaikai','imPrice','chikuHojoUsd','yoneyamaHojo','zaidanPrice','yoneyamaSpecial',
+    'yoneyamaScholar','kaijoPrice','onkyoPrice','hokanPrice','shoku1Price','shoku2Price','shoku3Price',
+    'shokuYobi','pianoPrice','pianoExtra'];
+  const o={}; moneyKeys.forEach(k=>o['cur_'+k]=usdKeys.includes(k)?'USD':'JPY'); return o;
+}
+let S={...def,...buildCur()};
+const cf=k=>S['cur_'+k]==='USD'?S.rate:1;
+
+/* 前年度予算（比較列） */
+const PREV={nyukaiReg:900000,nyukaiRep:500000,nenkaiReg:38520000,nenkaiPar:160000,chikuTaikaiIn:1155000,imIn:0,
+  visitor:200000,nikoniko:2470028,risoku:1000,chikuHojo:193200,yoneyamaHojo:11250,zatsu:4500000,
+  ri:1381863,riProp:90000,kitei:17871,yoneyamaFutsu:540000,chikuButan:2592000,rotarian:7728,tomo:366300,
+  group1Unei:222000,group1Butan:320000,chikuTaikaiEx:1155000,imEx:1221000,
+  jimusyoChinshaku:2765700,jimusyoKanri:700000,jinkenhi:2400000,kaikeiItaku:374000,hokenhi:40000,shomohin:550000,
+  kigu:200000,toshohin:700000,tsushin:400000,kaigihi:1500000,keicho:800000,kosai:250000,zasshi:40000,zappi:400000,
+  kaijo:2235200,shokuhi:8232000,unei:230000,kanriUnei:20000,shusseki:20000,shokugyoBunrui:10000,kaiinZokyo:100000,
+  kaiinSenko:10000,shinboku:11000000,joho:100000,program:800000,kaiho:1200000,koukyo:100000,hoken:100000,saa:150000,
+  shokugyoHoshi:50000,shakaiHoshi:800000,chiikiKassei:550000,kankyo:250000,kokusaiHoshi:700000,yoneyamaKinen:100000,
+  seishonen:20000,seishonenKokan:10000,interact:350000,rotaract:100000,zaidanKei:50000,chokiKeikaku:170000,
+  kikinKurire:1200000,miraiHoshi:500000,zaimuKento:50000,saigai:200000,yobihi:169816,
+  zaidanKizo:4226250,zaidanNew:241500,zaidanSes:320000,yoneyamaSpecial:2775000,yoneyamaScholar:420000};
+
+/* ============ 計算エンジン（単価×通貨×数量） ============ */
+function compute(){
+  const s=S, r=s.rate;
+  const regInit=s.mRegInit, parInit=s.mParInit, regEnd=s.mRegInit+s.mRegNew-s.mRegWithdraw, parEnd=s.mParInit+s.mParNew-s.mParWithdraw;
+  const initT=regInit+parInit, endT=regEnd+parEnd;
+  const c={regEnd,parEnd};
+
+  /* Ⅰ 収入 */
+  c.in_nyukaiReg=s.mRegNew*s.nyukaiReg*cf('nyukaiReg');
+  c.in_nyukaiRep=s.mReplace*s.nyukaiRep*cf('nyukaiRep');
+  c.in_nenkaiReg=(regInit+regEnd)*s.nenkaiHalf*cf('nenkaiHalf');
+  c.in_nenkaiPar=(parInit+parEnd)*(s.nenkaiHalf/2)*cf('nenkaiHalf');
+  c.in_chikuTaikai=initT*s.chikuTaikai*cf('chikuTaikai');
+  c.in_im=endT*s.imPrice*cf('imPrice');
+  const visHalf=s.visRegQty*s.visRegPrice*cf('visRegPrice')+s.visSesQty*s.visSesPrice*cf('visSesPrice');
+  c.in_visitor=visHalf*2;
+  c.in_nikoniko=s.nikoniko;
+  c.in_risoku=s.risoku;
+  c.in_chikuHojo=s.chikuHojoUsd*cf('chikuHojoUsd');
+  c.in_yoneyamaHojo=s.yoneyamaHojo*cf('yoneyamaHojo');
+  c.in_zatsu=s.zatsu;
+  c.incomeTotal=c.in_nyukaiReg+c.in_nyukaiRep+c.in_nenkaiReg+c.in_nenkaiPar+c.in_chikuTaikai+c.in_im
+    +c.in_visitor+c.in_nikoniko+c.in_risoku+c.in_chikuHojo+c.in_yoneyamaHojo+c.in_zatsu;
+
+  /* 分担金 A */
+  c.ex_ri=(initT+endT)*s.riPrice*cf('riPrice');
+  c.ex_riProp=s.riProp*cf('riProp');
+  c.ex_kitei=endT*s.kiteiPrice*cf('kiteiPrice');
+  c.ex_yoneyamaFutsu=(initT+endT)*s.yoneyamaFutsu*cf('yoneyamaFutsu');
+  c.ex_chikuButan=(initT+endT)*s.chikuButan*cf('chikuButan');
+  c.ex_rotarian=s.rotarianQty*s.rotarianPrice*cf('rotarianPrice');
+  c.ex_tomo=endT*s.tomoPrice*cf('tomoPrice')*12;
+  c.ex_group1Unei=endT*s.group1Unei*cf('group1Unei');
+  c.ex_group1Butan=s.group1Butan*cf('group1Butan');
+  c.ex_chikuTaikai=initT*s.chikuTaikai*cf('chikuTaikai');
+  c.ex_im=endT*s.imPrice*cf('imPrice');
+  c.A=c.ex_ri+c.ex_riProp+c.ex_kitei+c.ex_yoneyamaFutsu+c.ex_chikuButan+c.ex_rotarian+c.ex_tomo
+    +c.ex_group1Unei+c.ex_group1Butan+c.ex_chikuTaikai+c.ex_im;
+
+  /* ①②事務運営 B */
+  c.office1=s.jimusyoChinshaku+s.jimusyoKanri+s.jinkenhi+s.kaikeiItaku+s.hokenhi+s.shomohin+s.kigu+s.toshohin+s.tsushin;
+  c.club2=s.kaigihi+s.keicho+s.kosai+s.zasshi+s.zappi;
+  c.B=c.office1+c.club2;
+
+  /* ③例会費 */
+  c.ex_kaijo=s.kaijoQty*s.kaijoPrice*cf('kaijoPrice')+s.onkyoQty*s.onkyoPrice*cf('onkyoPrice')+s.hokanQty*s.hokanPrice*cf('hokanPrice');
+  c.ex_shokuhi=s.shoku1Price*cf('shoku1Price')*s.shoku1Qty*s.shoku1Times
+    +s.shoku2Price*cf('shoku2Price')*s.shoku2Qty*s.shoku2Times
+    +s.shoku3Price*cf('shoku3Price')*s.shoku3Qty*s.shoku3Times+s.shokuYobi*cf('shokuYobi');
+  c.ex_unei=s.pianoQty*s.pianoPrice*cf('pianoPrice')+s.pianoExtra*cf('pianoExtra');
+  c.reikai3=c.ex_kaijo+c.ex_shokuhi+c.ex_unei;
+  c.serve4=s.kanriUnei+s.shusseki+s.shokugyoBunrui+s.kaiinZokyo+s.kaiinSenko+s.shinboku+s.joho+s.program+s.kaiho+s.koukyo+s.hoken;
+  c.saa5=s.saa;
+  c.C=c.reikai3+c.serve4+c.saa5;
+
+  c.shokugyo6=s.shokugyoHoshi;
+  c.shakai7=s.shakaiHoshi+s.chiikiKassei+s.kankyo;
+  c.kokusai8=s.kokusaiHoshi+s.yoneyamaKinen;
+  c.seishonen9=s.seishonen+s.seishonenKokan+s.interact+s.rotaract;
+  c.other10=s.zaidanKei+s.chokiKeikaku+s.kikinKurire+s.miraiHoshi+s.zaimuKento+s.saigai+s.yobihi;
+  c.D=c.shokugyo6+c.shakai7+c.kokusai8+c.seishonen9+c.other10;
+
+  c.expenseTotal=c.A+c.B+c.C+c.D;
+  c.normalBal=c.incomeTotal-c.expenseTotal;
+
+  /* Ⅱ 寄付金等 */
+  c.don_zaidanKizo=s.zaidanPrice*cf('zaidanPrice')*initT;
+  c.don_zaidanNew=s.zaidanPrice*cf('zaidanPrice')*s.mRegNew;
+  c.don_zaidanSes=s.zaidanSesQty*s.zaidanSesPrice*cf('zaidanSesPrice')*s.zaidanSesTimes;
+  c.don_yoneyamaSpecial=endT*s.yoneyamaSpecial*cf('yoneyamaSpecial');
+  c.don_yoneyamaScholar=s.yoneyamaScholar*cf('yoneyamaScholar')*s.scholarMonths;
+  c.donTotal=c.don_zaidanKizo+c.don_zaidanNew+c.don_zaidanSes+c.don_yoneyamaSpecial+c.don_yoneyamaScholar;
+  c.donBal=0;
+
+  /* Ⅲ 繰越 */
+  c.carryPrev=s.carryPrev;
+  c.carryNext=c.carryPrev+c.normalBal+c.donBal;
+  return c;
+}
+
+/* 表示ユーティリティ */
+const yen=v=>'¥'+Math.round(v).toLocaleString('ja-JP');
+function signed(v){const n=Math.round(v);if(n===0)return'0';return n<0?'△'+Math.abs(n).toLocaleString('ja-JP'):n.toLocaleString('ja-JP');}
+function diffCell(cur,prev){const d=Math.round(cur-prev);if(d===0)return'<td class="num diff">―</td>';
+  const cls=d>0?'pos':'neg',sym=d>0?'+':'△';return`<td class="num diff ${cls}">${sym}${Math.abs(d).toLocaleString('ja-JP')}</td>`;}
+function rowCalc(n,cur,prev,sub){return`<tr><td class="name ${sub?'sub':''}">${n}</td><td class="num cur ccell">${signed(cur)}</td><td class="num prev">${prev!=null?signed(prev):''}</td>${prev!=null?diffCell(cur,prev):'<td></td>'}</tr>`;}
+function rowEdit(n,key,prev,sub){return`<tr><td class="name ${sub?'sub':''}">${n}</td><td class="editwrap"><input class="edit" type="number" data-key="${key}" value="${S[key]}"></td><td class="num prev">${prev!=null?signed(prev):''}</td>${prev!=null?`<td class="num diff" data-diff="${key}"></td>`:'<td></td>'}</tr>`;}
+function rowSub(n,cur,prev){return`<tr class="subtotal"><td class="name">${n}</td><td class="num">${signed(cur)}</td><td class="num">${prev!=null?signed(prev):''}</td>${prev!=null?diffCell(cur,prev):'<td></td>'}</tr>`;}
+function rowGrand(n,cur,prev){return`<tr class="grandtotal"><td class="name">${n}</td><td class="num">${signed(cur)}</td><td class="num">${prev!=null?signed(prev):''}</td>${prev!=null?diffCell(cur,prev):'<td></td>'}</tr>`;}
+function rowBalance(n,cur){return`<tr class="balance"><td class="name">${n}</td><td class="num">${signed(cur)}</td><td></td><td></td></tr>`;}
+const thead=`<thead><tr><th class="l">項目</th><th>2025–2026</th><th>2024–2025</th><th>差額</th></tr></thead>`;
+
+/* レンダリング */
+function renderLedger(c){
+  const P=PREV; let h='';
+  h+=`<div class="section-title">Ⅰ　通常収支の部 <span class="en">ORDINARY ACCOUNT</span></div>`;
+  h+=`<div class="subhead">１　収入の部</div><table>${thead}<tbody>`;
+  h+=rowCalc('入会金（通常会員）',c.in_nyukaiReg,P.nyukaiReg);
+  h+=rowCalc('入会金（交代会員）',c.in_nyukaiRep,null,true);
+  h+=rowCalc('年会費（通常会員）',c.in_nenkaiReg,P.nenkaiReg);
+  h+=rowCalc('年会費（親子会員）',c.in_nenkaiPar,P.nenkaiPar,true);
+  h+=rowCalc('地区大会登録料',c.in_chikuTaikai,P.chikuTaikaiIn);
+  h+=rowCalc('ＩＭ登録料',c.in_im,P.imIn);
+  h+=rowCalc('ビジター登録料',c.in_visitor,P.visitor);
+  h+=rowCalc('ニコニコ活動資金',c.in_nikoniko,P.nikoniko);
+  h+=rowEdit('受取利息','risoku',P.risoku);
+  h+=rowCalc('地区補助金',c.in_chikuHojo,P.chikuHojo);
+  h+=rowCalc('米山記念奨学補助金',c.in_yoneyamaHojo,P.yoneyamaHojo);
+  h+=rowEdit('雑収入','zatsu',P.zatsu);
+  const inPrev=P.nyukaiReg+P.nyukaiRep+P.nenkaiReg+P.nenkaiPar+P.chikuTaikaiIn+P.imIn+P.visitor+P.nikoniko+P.risoku+P.chikuHojo+P.yoneyamaHojo+P.zatsu;
+  h+=rowSub('収入の部 合計',c.incomeTotal,inPrev);
+  h+=`</tbody></table>`;
+
+  h+=`<div class="subhead">２　支出の部</div><table>${thead}<tbody>`;
+  h+=rowCalc('R.I.人頭分担金',c.ex_ri,P.ri);
+  h+=rowCalc('R.I.比例人頭分担金',c.ex_riProp,P.riProp);
+  h+=rowCalc('規程審議会追加人頭分担金',c.ex_kitei,P.kitei);
+  h+=rowCalc('米山普通寄付',c.ex_yoneyamaFutsu,P.yoneyamaFutsu);
+  h+=rowCalc('地区分担金',c.ex_chikuButan,P.chikuButan);
+  h+=rowCalc('Ｔｈｅ　Ｒｏｔａｒｉａｎ',c.ex_rotarian,P.rotarian);
+  h+=rowCalc('ロータリーの友',c.ex_tomo,P.tomo);
+  h+=rowCalc('第1グループ運営費',c.ex_group1Unei,P.group1Unei);
+  h+=rowCalc('第1グループ分担金',c.ex_group1Butan,P.group1Butan);
+  h+=rowCalc('地区大会登録料',c.ex_chikuTaikai,P.chikuTaikaiEx);
+  h+=rowCalc('ＩＭ登録料',c.ex_im,P.imEx);
+  const Aprev=P.ri+P.riProp+P.kitei+P.yoneyamaFutsu+P.chikuButan+P.rotarian+P.tomo+P.group1Unei+P.group1Butan+P.chikuTaikaiEx+P.imEx;
+  h+=rowSub('分担金 計　Ａ',c.A,Aprev);
+
+  h+=rowEdit('事務所賃借料','jimusyoChinshaku',P.jimusyoChinshaku);
+  h+=rowEdit('事務所管理費','jimusyoKanri',P.jimusyoKanri);
+  h+=rowEdit('人件費','jinkenhi',P.jinkenhi);
+  h+=rowEdit('会計事務一部委託','kaikeiItaku',P.kaikeiItaku);
+  h+=rowEdit('傷害保険費','hokenhi',P.hokenhi);
+  h+=rowEdit('消耗品費','shomohin',P.shomohin);
+  h+=rowEdit('器具備品費','kigu',P.kigu);
+  h+=rowEdit('図書印刷費','toshohin',P.toshohin);
+  h+=rowEdit('通信費','tsushin',P.tsushin);
+  const o1p=P.jimusyoChinshaku+P.jimusyoKanri+P.jinkenhi+P.kaikeiItaku+P.hokenhi+P.shomohin+P.kigu+P.toshohin+P.tsushin;
+  h+=rowSub('①事務所費 計',c.office1,o1p);
+  h+=rowEdit('会議費','kaigihi',P.kaigihi);
+  h+=rowEdit('慶弔費','keicho',P.keicho);
+  h+=rowEdit('交際費','kosai',P.kosai);
+  h+=rowEdit('雑誌購読料','zasshi',P.zasshi);
+  h+=rowEdit('雑費','zappi',P.zappi);
+  const c2p=P.kaigihi+P.keicho+P.kosai+P.zasshi+P.zappi;
+  h+=rowSub('②クラブ費 計',c.club2,c2p);
+  h+=rowSub('事務運営費　Ｂ（①＋②）',c.B,o1p+c2p);
+
+  h+=rowCalc('例会場設営費',c.ex_kaijo,P.kaijo);
+  h+=rowCalc('例会食費',c.ex_shokuhi,P.shokuhi);
+  h+=rowCalc('例会運営費',c.ex_unei,P.unei);
+  h+=rowSub('③例会費 計',c.reikai3,P.kaijo+P.shokuhi+P.unei);
+  h+=rowEdit('クラブ管理運営','kanriUnei',P.kanriUnei);
+  h+=rowEdit('出席','shusseki',P.shusseki);
+  h+=rowEdit('職業分類','shokugyoBunrui',P.shokugyoBunrui);
+  h+=rowEdit('会員増強','kaiinZokyo',P.kaiinZokyo);
+  h+=rowEdit('会員選考','kaiinSenko',P.kaiinSenko);
+  h+=rowEdit('親睦活動','shinboku',P.shinboku);
+  h+=rowEdit('情報','joho',P.joho);
+  h+=rowEdit('プログラム','program',P.program);
+  h+=rowEdit('会報','kaiho',P.kaiho);
+  h+=rowEdit('公共イメージ向上','koukyo',P.koukyo);
+  h+=rowEdit('保健','hoken',P.hoken);
+  const s4p=P.kanriUnei+P.shusseki+P.shokugyoBunrui+P.kaiinZokyo+P.kaiinSenko+P.shinboku+P.joho+P.program+P.kaiho+P.koukyo+P.hoken;
+  h+=rowSub('④クラブ奉仕 計',c.serve4,s4p);
+  h+=rowEdit('⑤ＳＡＡ','saa',P.saa);
+  h+=rowSub('クラブ関連費　Ｃ（③＋④＋⑤）',c.C,(P.kaijo+P.shokuhi+P.unei)+s4p+P.saa);
+
+  h+=rowEdit('⑥職業奉仕 計','shokugyoHoshi',P.shokugyoHoshi);
+  h+=rowEdit('社会奉仕','shakaiHoshi',P.shakaiHoshi);
+  h+=rowEdit('地域活性化','chiikiKassei',P.chiikiKassei);
+  h+=rowEdit('環境保全','kankyo',P.kankyo);
+  h+=rowSub('⑦社会奉仕 計',c.shakai7,P.shakaiHoshi+P.chiikiKassei+P.kankyo);
+  h+=rowEdit('国際奉仕','kokusaiHoshi',P.kokusaiHoshi);
+  h+=rowEdit('米山記念奨学','yoneyamaKinen',P.yoneyamaKinen);
+  h+=rowSub('⑧国際奉仕 計',c.kokusai8,P.kokusaiHoshi+P.yoneyamaKinen);
+  h+=rowEdit('青少年奉仕','seishonen',P.seishonen);
+  h+=rowEdit('青少年交換','seishonenKokan',P.seishonenKokan);
+  h+=rowEdit('インターアクト','interact',P.interact);
+  h+=rowEdit('ローターアクト','rotaract',P.rotaract);
+  h+=rowSub('⑨青少年奉仕 計',c.seishonen9,P.seishonen+P.seishonenKokan+P.interact+P.rotaract);
+  h+=rowEdit('ロータリー財団','zaidanKei',P.zaidanKei);
+  h+=rowEdit('長期計画懇談会','chokiKeikaku',P.chokiKeikaku);
+  h+=rowEdit('基金会計繰入','kikinKurire',P.kikinKurire);
+  h+=rowEdit('地域未来奉仕委員会','miraiHoshi',P.miraiHoshi);
+  h+=rowEdit('財務検討委員会','zaimuKento',P.zaimuKento);
+  h+=rowEdit('災害支援金','saigai',P.saigai);
+  h+=rowEdit('予備費','yobihi',P.yobihi);
+  const o10p=P.zaidanKei+P.chokiKeikaku+P.kikinKurire+P.miraiHoshi+P.zaimuKento+P.saigai+P.yobihi;
+  h+=rowSub('⑩その他委員会等 計',c.other10,o10p);
+  const Dprev=P.shokugyoHoshi+(P.shakaiHoshi+P.chiikiKassei+P.kankyo)+(P.kokusaiHoshi+P.yoneyamaKinen)+(P.seishonen+P.seishonenKokan+P.interact+P.rotaract)+o10p;
+  h+=rowSub('奉仕その他費用　Ｄ（⑥+⑦+⑧+⑨+⑩）',c.D,Dprev);
+  h+=rowGrand('支出の部 合計（Ａ＋Ｂ＋Ｃ＋Ｄ）',c.expenseTotal,Aprev+o1p+c2p+(P.kaijo+P.shokuhi+P.unei)+s4p+P.saa+Dprev);
+  h+=rowBalance('通常収支差額',c.normalBal);
+  h+=`</tbody></table>`;
+
+  h+=`<div class="section-title">Ⅱ　寄付金等収支の部 <span class="en">DONATION ACCOUNT</span></div><table>${thead}<tbody>`;
+  h+=rowCalc('財団寄付',c.don_zaidanKizo,P.zaidanKizo);
+  h+=rowCalc('財団特別寄付（新会員）',c.don_zaidanNew,P.zaidanNew);
+  h+=rowCalc('財団特別寄付（節食）',c.don_zaidanSes,P.zaidanSes);
+  h+=rowCalc('米山特別寄付',c.don_yoneyamaSpecial,P.yoneyamaSpecial);
+  h+=rowCalc('米山記念奨学金',c.don_yoneyamaScholar,P.yoneyamaScholar);
+  const donPrev=P.zaidanKizo+P.zaidanNew+P.zaidanSes+P.yoneyamaSpecial+P.yoneyamaScholar;
+  h+=rowSub('収入の部 合計',c.donTotal,donPrev);
+  h+=rowSub('支出の部 合計',c.donTotal,donPrev);
+  h+=rowBalance('寄付金等収支差額',c.donBal);
+  h+=`</tbody></table>`;
+
+  h+=`<div class="section-title">Ⅲ　一般会計収支合計 <span class="en">CARRY-FORWARD</span></div><table>${thead}<tbody>`;
+  h+=rowEdit('前年度繰越金（一般）','carryPrev',null);
+  h+=rowCalc('通常収支差額',c.normalBal,null);
+  h+=rowCalc('寄付金等収支差額',c.donBal,null);
+  h+=rowGrand('次年度繰越金（見込）',c.carryNext,null);
+  h+=`</tbody></table>`;
+
+  document.getElementById('ledger').innerHTML=h;
+  document.querySelectorAll('input.edit').forEach(inp=>inp.addEventListener('input',()=>{S[inp.dataset.key]=Number(inp.value)||0;update(false);}));
+  refreshEditDiffs();
+}
+function refreshEditDiffs(){
+  document.querySelectorAll('td[data-diff]').forEach(td=>{
+    const k=td.dataset.diff, cur=Number(S[k])||0, prev=PREV[k];
+    if(prev==null){td.innerHTML='';return;}
+    const d=Math.round(cur-prev);
+    if(d===0){td.className='num diff';td.textContent='―';return;}
+    td.className='num diff '+(d>0?'pos':'neg');
+    td.textContent=(d>0?'+':'△')+Math.abs(d).toLocaleString('ja-JP');
+  });
+}
+function renderSummary(c){
+  document.getElementById('endReg').innerHTML=c.regEnd+'<span>名</span>';
+  document.getElementById('endPar').innerHTML=c.parEnd+'<span>名</span>';
+  document.getElementById('sIncome').textContent=yen(c.incomeTotal);
+  document.getElementById('sExpense').textContent=yen(c.expenseTotal);
+  const g=document.getElementById('gauge'), bal=c.normalBal;
+  document.getElementById('gVal').textContent=(bal<0?'△':'')+'¥'+Math.abs(Math.round(bal)).toLocaleString('ja-JP');
+  const st=document.getElementById('gState'); g.classList.remove('bal','sur','def');
+  if(Math.abs(bal)<1){g.classList.add('bal');st.textContent='収支均衡';}
+  else if(bal>0){g.classList.add('sur');st.textContent='剰　余';}
+  else{g.classList.add('def');st.textContent='不　足';}
+  const tot=c.incomeTotal+c.expenseTotal||1;
+  document.getElementById('barI').style.width=(c.incomeTotal/tot*100)+'%';
+  document.getElementById('barE').style.width=(c.expenseTotal/tot*100)+'%';
+  document.getElementById('sCarry').textContent=(c.carryPrev<0?'△':'')+'¥'+Math.abs(c.carryPrev).toLocaleString('ja-JP');
+  document.getElementById('sDonBal').textContent=yen(c.donBal);
+  const nx=document.getElementById('sNext');
+  nx.textContent=(c.carryNext<0?'△':'')+'¥'+Math.abs(Math.round(c.carryNext)).toLocaleString('ja-JP');
+  nx.style.color=c.carryNext<0?'var(--neg)':'var(--royal)';
+}
+
+/* ============ 検算（例会回数の整合性） ============ */
+let dismissedKey=null;
+function renderCheck(){
+  const s=S;
+  const mealTotal=s.shoku1Times+s.shoku2Times+s.shoku3Times; // 食事回数合計＝想定例会回数
+  const items=[
+    ['会場設営',s.kaijoQty],['音響照明',s.onkyoQty],['備品保管',s.hokanQty],
+    ['食事回数計',mealTotal],['ピアノ',s.pianoQty]
+  ];
+  const base=mealTotal;
+  let h=`<div class="check-base">基準（食事回数の合計）＝ <b>${base}</b> 回</div>`;
+  const mism=[];
+  items.forEach(([n,v])=>{
+    if(n==='食事回数計'){h+=`<div class="check-row"><span class="cn">${n}</span><span class="cv ok">${v} 回</span></div>`;return;}
+    const ok=(v===base);
+    if(!ok)mism.push(`${n} ${v}回（基準${v>base?'+':'△'}${Math.abs(v-base)}）`);
+    h+=`<div class="check-row"><span class="cn">${n}</span><span class="cv ${ok?'ok':'warn'}">${v} 回${ok?' ✓':' ⚠'}</span></div>`;
+  });
+  const key=items.map(i=>i[1]).join('|');
+  if(mism.length===0){
+    h+=`<div class="ok-msg">✓ 例会回数は整合しています</div>`;
+  }else if(dismissedKey!==key){
+    h+=`<div class="alert"><button class="x" onclick="dismissCheck('${key}')" title="確認済み（無視）">×</button>
+      <b>⚠ 回数の不一致</b><br>${mism.join('<br>')}<br>
+      <span style="opacity:.85">意図的（例：ピアノは交通費分を含む等）であればこのまま無視できます。</span></div>`;
+  }else{
+    h+=`<div class="ok-msg" style="background:#f3f5f8;border-color:var(--rule);color:var(--muted)">確認済み（不一致を無視中）</div>`;
+  }
+  document.getElementById('checkBody').innerHTML=h;
+}
+function dismissCheck(key){dismissedKey=key;renderCheck();}
+
+/* 詳細パネル定義：[key,label,kind,src]  kind: 'money'(¥/$切替) | 'count'(単位) */
+const paramDefs=[
+  ['会員・収入単価','単価 × 通貨 × 人数／回数',[
+    ['nyukaiReg','入会金 通常単価','money'],['nyukaiRep','入会金 交代単価','money'],['nenkaiHalf','年会費 半期単価','money'],
+    ['visRegQty','ビジター 通常 人数','count'],['visRegPrice','ビジター 通常 単価','money'],
+    ['visSesQty','ビジター 節食 人数','count'],['visSesPrice','ビジター 節食 単価','money'],
+    ['chikuHojoUsd','地区補助金','money','https://my.rotary.org/ja/exchange-rates'],['yoneyamaHojo','米山奨学補助金','money'],
+  ]],
+  ['分担金・寄付単価','RI関連は原則ドル建て（自動で円換算）',[
+    ['riPrice','R.I.人頭分担金','money','https://my.rotary.org/ja/exchange-rates'],['riProp','R.I.比例人頭分担金','money'],
+    ['kiteiPrice','規程審議会','money','https://my.rotary.org/ja/exchange-rates'],['yoneyamaFutsu','米山普通寄付 単価','money'],
+    ['chikuButan','地区分担金 単価','money'],['rotarianQty','The Rotarian 冊数','count'],
+    ['rotarianPrice','The Rotarian 単価','money','https://my.rotary.org/ja/exchange-rates'],['tomoPrice','ロータリーの友 単価','money'],
+    ['group1Unei','第1グループ運営 単価','money'],['group1Butan','第1グループ分担金','money'],
+    ['chikuTaikai','地区大会登録料 単価','money'],['imPrice','IM登録料 単価','money'],
+  ]],
+  ['寄付金等収支','',[
+    ['zaidanPrice','財団特別寄付','money','https://my.rotary.org/ja/exchange-rates'],['zaidanSesQty','財団寄付(節食) 人数','count'],
+    ['zaidanSesPrice','財団寄付(節食) 単価','money'],['zaidanSesTimes','財団寄付(節食) 回数','count'],
+    ['yoneyamaSpecial','米山特別寄付 単価','money'],['yoneyamaScholar','米山記念奨学金 月額','money'],['scholarMonths','奨学金 月数','count'],
+  ]],
+  ['例会関係','会場・食事・ピアノの回数は検算対象です',[
+    ['kaijoQty','会場 回数','count'],['kaijoPrice','会場 単価','money'],
+    ['onkyoQty','音響照明 回数','count'],['onkyoPrice','音響照明 単価','money'],
+    ['hokanQty','備品保管 回数','count'],['hokanPrice','備品保管 単価','money'],
+    ['shoku1Price','食費① 単価','money'],['shoku1Qty','食費① 人数','count'],['shoku1Times','食費① 回数','count'],
+    ['shoku2Price','食費② 単価','money'],['shoku2Qty','食費② 人数','count'],['shoku2Times','食費② 回数','count'],
+    ['shoku3Price','食費③ 単価','money'],['shoku3Qty','食費③ 人数','count'],['shoku3Times','食費③ 回数','count'],
+    ['shokuYobi','例会食費 予備費','money'],
+    ['pianoQty','ピアノ 回数','count'],['pianoPrice','ピアノ 単価','money'],['pianoExtra','例会運営 加算(交通費等)','money'],
+  ]],
+];
+const countUnit=k=>{if(/Qty$/.test(k)&&/^(rotarian|zaidanSes)/.test(k))return'冊/人';
+  if(/Qty$/.test(k))return/visReg|visSes/.test(k)?'人':'回';if(/Times$/.test(k))return'回';
+  if(/Months$/.test(k))return'月';return'';};
+function renderParams(){
+  let h='';
+  paramDefs.forEach(([grp,hint,items])=>{
+    h+=`<div class="pgrp"><span>${grp}</span><span class="ghint">${hint}</span></div><div class="prow">`;
+    items.forEach(([k,lab,kind,src])=>{
+      const money=kind==='money', cur=S['cur_'+k]||'JPY';
+      h+=`<div class="pfld"><label>${lab}${src?` <a class="srcl" href="${src}" target="_blank" rel="noopener">根拠↗</a>`:''}</label>
+        <div class="pin"><input type="number" data-pkey="${k}" value="${S[k]}">
+        ${money?`<div class="cur2" data-curfor="${k}"><button data-cur="JPY" class="${cur==='JPY'?'on':''}">¥</button><button data-cur="USD" class="${cur==='USD'?'on':''}">$</button></div>`
+          :`<span class="cunit">${countUnit(k)}</span>`}</div></div>`;
+    });
+    h+=`</div>`;
+  });
+  document.getElementById('paramGrid').innerHTML=h;
+  document.querySelectorAll('input[data-pkey]').forEach(inp=>inp.addEventListener('input',()=>{S[inp.dataset.pkey]=Number(inp.value)||0;update(true);}));
+  document.querySelectorAll('.cur2 button').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.parentElement.dataset.curfor; S['cur_'+k]=b.dataset.cur;
+    b.parentElement.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    update(true);
+  }));
+}
+
+/* レート操作 */
+function applyRate(v){S.rate=v;document.getElementById('rate').value=v;update(true);}
+let mktVal=null;
+function applyMkt(){if(mktVal)applyRate(Math.round(mktVal));}
+async function fetchMarket(){
+  try{
+    const res=await fetch('https://api.frankfurter.app/latest?base=USD&symbols=JPY');
+    if(!res.ok)throw 0;
+    const d=await res.json(); mktVal=d.rates.JPY;
+    document.getElementById('mktRate').textContent=mktVal.toFixed(2)+' 円';
+    document.getElementById('mktDate').textContent=d.date;
+    document.getElementById('mktApply').style.visibility='visible';
+  }catch(e){
+    document.getElementById('mktRate').textContent='取得不可';
+    document.getElementById('mktDate').textContent='手動入力で運用';
+  }
+}
+
+/* ドライバー */
+['rate','nikoniko','mRegInit','mParInit','mRegNew','mParNew','mRegWithdraw','mParWithdraw','mReplace'].forEach(id=>
+  document.getElementById(id).addEventListener('input',e=>{S[id]=Number(e.target.value)||0;update(true);}));
+
+function resetAll(){
+  S={...def,...buildCur()}; dismissedKey=null;
+  ['rate','nikoniko','mRegInit','mParInit','mRegNew','mParNew','mRegWithdraw','mParWithdraw','mReplace'].forEach(id=>document.getElementById(id).value=S[id]);
+  renderParams(); update(true);
+}
+function update(rebuild){const c=compute();if(rebuild)renderLedger(c);else refreshEditDiffs();renderSummary(c);renderCheck();}
+
+/* 初期化 */
+document.getElementById('offRate').textContent=OFFICIAL.rate+' 円';
+document.getElementById('offDate').textContent=OFFICIAL.label;
+renderParams(); update(true); fetchMarket();
+</script>
+</body>
+</html>
